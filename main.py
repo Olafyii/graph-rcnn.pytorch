@@ -25,6 +25,7 @@ def train(cfg, args):
     arguments["iteration"] = 0
     model = build_model(cfg, arguments, args.local_rank, args.distributed)
     model.train()
+    # model.debug()
     return model
 
 def test(cfg, args, model=None):
@@ -49,7 +50,7 @@ def main():
     parser.add_argument("--instance", type=int, default=-1)
     parser.add_argument("--use_freq_prior", action='store_true')
     parser.add_argument("--visualize", action='store_true')
-    parser.add_argument("--algorithm", type=str, default='sg_baseline')
+    parser.add_argument("--algorithm", type=str, default='sg_grcnn')
     args = parser.parse_args()
 
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
@@ -84,6 +85,8 @@ def main():
     save_config(cfg, output_config_path)
 
     if not args.inference:
+        # print(cfg.MODEL.ROI_BOX_HEAD.PREDICTOR)
+        # raise RuntimeError('main.py line 89')
         model = train(cfg, args)
     else:
         test(cfg, args)
