@@ -187,7 +187,15 @@ class RelPN(nn.Module):
             # neg_labels = torch.zeros(len(neg_inds_img.nonzero()))
             # rellabels = torch.cat((pos_labels, neg_labels), 0).view(-1, 1)
             # losses += F.binary_cross_entropy(relness, rellabels.to(relness.device))
+
+            # if relness.view(-1, 1).min() < 0 or relness.view(-1, 1).max() > 1 \
+            #     or (labels[img_idx] > 0).view(-1, 1).float().min() < 0 or (labels[img_idx] > 0).view(-1, 1).float().max() > 1:
+            #     print(relness.view(-1, 1).min(), relness.view(-1, 1).max(), (labels[img_idx] > 0).view(-1, 1).float().min(), (labels[img_idx] > 0).view(-1, 1).float().max())
+            #     raise RuntimeError('bce loss only accept >=0 and <=1')
+            # print(relness.view(-1, 1).min().item(), relness.view(-1, 1).max().item(), (labels[img_idx] > 0).view(-1, 1).float().min().item(), (labels[img_idx] > 0).view(-1, 1).float().max().item())
             losses += F.binary_cross_entropy(relness.view(-1, 1), (labels[img_idx] > 0).view(-1, 1).float())
+            # losses += nn.BCEWithLogitsLoss()(torch.clamp(relness.view(-1, 1), min=0, max=1), torch.clamp((labels[img_idx] > 0).view(-1, 1).float(), min=0, max=1))
+
 
         # distributed sampled proposals, that were obtained on all feature maps
         # concatenated via the fg_bg_sampler, into individual feature map levels

@@ -37,6 +37,16 @@ class ROIBoxHead(torch.nn.Module):
             losses (dict[Tensor]): During training, returns the losses for the
                 head. During testing, returns an empty dict.
         """
+        # print('len(proposals)', len(proposals))
+        # for proposal in proposals:
+        #     print(proposal)
+        # print('len(features)', len(features))
+        # for feature in features:
+        #     print(feature.size())
+        # print('len(targets)', len(targets))
+        # for target in targets:
+        #     print(target)
+        # raise RuntimeError("box_head.py line 41")
         if self.training: # or not self.cfg.inference:
             # Faster R-CNN subsamples during training the proposals with a fixed
             # positive / negative ratio
@@ -47,6 +57,13 @@ class ROIBoxHead(torch.nn.Module):
         # feature_extractor generally corresponds to the pooler + heads
         x = self.feature_extractor(features, proposals)
         # final classifier that converts the features into predictions
+        # print('self.predictor', self.predictor)
+        # self.predictor FastRCNNPredictor(
+        # (avgpool): AdaptiveAvgPool2d(output_size=1)
+        # (cls_score): Linear(in_features=2048, out_features=151, bias=True)
+        # (bbox_pred): Linear(in_features=2048, out_features=604, bias=True)
+        # )
+        # raise RuntimeError("STOP!!")
         class_logits, box_regression = self.predictor(x)
 
         boxes_per_image = [len(proposal) for proposal in proposals]

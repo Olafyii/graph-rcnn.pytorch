@@ -15,6 +15,8 @@ from .scene_parser.rcnn.utils.visualize import select_top_predictions, overlay_b
 from .data.evaluation import evaluate, evaluate_sg
 from .utils.box import bbox_overlaps
 
+from .scene_parser.rcnn.structures.image_list import to_image_list
+
 class SceneGraphGeneration:
     """
     Scene graph generation
@@ -110,7 +112,7 @@ class SceneGraphGeneration:
             possible_boxes = np.column_stack(np.where(all_possib))
         return possible_boxes
 
-    def train(self):
+    def debug(self):
         """
         main body for training scene graph generation model
         """
@@ -123,12 +125,57 @@ class SceneGraphGeneration:
         start_training_time = time.time()
         end = time.time()
         for i, data in enumerate(self.data_loader_train, start_iter):
+            print(i)
             data_time = time.time() - end
             self.arguments["iteration"] = i
             self.sp_scheduler.step()
             imgs, targets, _ = data
             imgs = imgs.to(self.device); targets = [target.to(self.device) for target in targets]
+
+            images = to_image_list(imgs)
+
+            features = self.scene_parser.backbone(images.tensors)
+            for feature in features:
+                assert not torch.isnan(feature).all(), 'bad feature!'
+
+    def train(self):
+        """
+        main body for training scene graph generation model
+        """
+        start_iter = self.arguments["iteration"]
+        logger = logging.getLogger("scene_graph_generation.trainer")
+        logger.info("Start training")
+        meters = MetricLogger(delimiter="  ")
+        max_iter = len(self.data_loader_train)
+        self.scene_parser.train()
+        start_training_time = time.time()
+        end = time.time()
+        # print('self.scene_parser', self.scene_parser)
+        # raise RuntimeError("model.py line 166")
+        for i, data in enumerate(self.data_loader_train, start_iter):
+            data_time = time.time() - end
+            self.arguments["iteration"] = i
+            self.sp_scheduler.step()
+            imgs, targets, _ = data
+
+            # for target in targets:
+            #     print(target.fields())
+            #     print(target.get_field('labels'))
+            #     print(target.get_field('pred_labels'))
+            #     print(target.get_field('relation_labels'))
+            # raise RuntimeError('model.py line 163')
+
+            imgs = imgs.to(self.device); targets = [target.to(self.device) for target in targets]
+
+            # images = to_image_list(imgs)
+            # features = self.scene_parser.backbone(images.tensors)
+            # for feature in features:
+            #     assert not torch.isnan(feature).all(), 'bad feature! in model.py line 163'
+
             loss_dict = self.scene_parser(imgs, targets)
+            # print(loss_dict)
+            # {'loss_classifier': tensor(5.3355, device='cuda:0', grad_fn=<NllLossBackward>), 'loss_box_reg': tensor(0.3237, device='cuda:0', grad_fn=<DivBackward0>), 'loss_obj_classifier': 0, 'loss_relpn': tensor(1.9932, device='cuda:0', grad_fn=<AddBackward0>), 'loss_pred_classifier': tensor(3.9704, device='cuda:0', grad_fn=<NllLossBackward>), 'loss_objectness': tensor(0.6694, device='cuda:0', grad_fn=<BinaryCrossEntropyWithLogitsBackward>), 'loss_rpn_box_reg': tensor(0.2562, device='cuda:0', grad_fn=<DivBackward0>)}
+            # raise RuntimeError("model.py line 167")
             losses = sum(loss for loss in loss_dict.values())
 
             # reduce losses over all GPUs for logging purposes

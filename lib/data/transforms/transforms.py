@@ -4,6 +4,8 @@ import random
 import torch
 import torchvision
 from torchvision.transforms import functional as F
+from PIL import Image
+import numpy as np
 
 
 class Compose(object):
@@ -114,7 +116,13 @@ class Normalize(object):
 
     def __call__(self, image, target=None):
         if self.to_bgr255:
-            image = image[[2, 1, 0]] * 255
+            # image = image[[2, 1, 0]] * 255
+            # i = Image.fromarray((image[[2,1,0]].permute(1,2,0).numpy()*255).astype(np.uint8), 'RGB')
+            # i.show()
+            image = image * 255
+            # print(type(image))
+            # print(image.size())
+            # raise RuntimeError('transforms.py line 123')
         image = F.normalize(image, mean=self.mean, std=self.std)
         if target is None:
             return image

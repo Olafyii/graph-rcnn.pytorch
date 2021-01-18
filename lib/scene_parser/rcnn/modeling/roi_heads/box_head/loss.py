@@ -59,6 +59,14 @@ class FastRCNNLossComputation(object):
             matched_idxs = matched_targets.get_field("matched_idxs")
 
             labels_per_image = matched_targets.get_field("labels")
+
+            # print('labels_per_image.size()', labels_per_image.size())
+            # print('proposal_per_image', proposals_per_image)
+            # print('target_per_image', targets_per_image)
+            # print('labels_per_image info:', labels_per_image.size(), labels_per_image.min(), labels_per_image.max())
+            # print('matched_idxs info:', matched_idxs.size(), matched_idxs.min(), matched_idxs.max())
+            # raise RuntimeError("loss.py line 68")
+
             labels_per_image = labels_per_image.to(dtype=torch.int64)
 
             # Label background (below the low threshold)
@@ -92,6 +100,13 @@ class FastRCNNLossComputation(object):
 
         labels, regression_targets = self.prepare_targets(proposals, targets)
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
+        # for label in labels:
+        #     print('labels', label.size())
+        # for pos_ind in sampled_pos_inds:
+        #     print('pos inds', pos_ind.sum(), pos_ind.size())
+        # for neg_ind in sampled_neg_inds:
+        #     print('neg inds', neg_ind.sum(), neg_ind.size())
+        # raise RuntimeError('loss.py line 105')
 
         proposals = list(proposals)
         # add corresponding label and regression_targets information to the bounding boxes
@@ -113,6 +128,8 @@ class FastRCNNLossComputation(object):
             proposals[img_idx] = proposals_per_image
 
         self._proposals = proposals
+        # print(self._proposals[0], self._proposals[0].get_field('objectness').size(), self._proposals[0].get_field('labels').size(), self._proposals[0].get_field('regression_targets').size())
+        # raise RuntimeError('loss.py line 132')
         return proposals
 
     def prepare_labels(self, proposals, targets):

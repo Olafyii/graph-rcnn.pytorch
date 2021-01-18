@@ -209,6 +209,9 @@ class ROIRelationHead(torch.nn.Module):
         loss_obj_classifier = 0
         if obj_class_logits is not None:
             loss_obj_classifier = self.loss_evaluator.obj_classification_loss(proposals, [obj_class_logits])
+            # print('loss_obj_classifier', loss_obj_classifier)
+        else:
+            raise RuntimeError('obj_class_logits is None!')
 
         if self.cfg.MODEL.USE_RELPN:
             idx = obj_class_labels[rel_inds[:, 0]] * 151 + obj_class_labels[rel_inds[:, 1]]

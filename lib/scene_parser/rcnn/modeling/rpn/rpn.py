@@ -152,7 +152,16 @@ class RPNModule(torch.nn.Module):
             losses (dict[Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
+        # for feature in features:
+        #     assert not torch.isnan(feature).all(), "bad feature! in rpn.py ln 156"
         objectness, rpn_box_regression = self.head(features)
+        # print('self.head', self.head)
+        # print('len(objectness)', len(objectness))
+        # print('objectness[0]', objectness[0].size())
+        # raise RuntimeError("STOP!!")
+        # for reg in rpn_box_regression:
+        #     assert not torch.isnan(reg).all(), 'bad regression prediction'
+        # raise RuntimeError("STOP!!!")
         anchors = self.anchor_generator(images, features)
 
         if self.training:

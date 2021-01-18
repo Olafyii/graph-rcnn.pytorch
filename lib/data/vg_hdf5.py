@@ -93,9 +93,16 @@ class vg_hdf5(Dataset):
         w, h = self.im_sizes[idx, :]
         ridx = self.image_index[idx]
         im = self.im_refs[ridx]
+
+        # print('type(im)', type(im), im.shape, im.shape)
+        # img = im[[2, 1, 0]]
+        # img = Image.fromarray(img.transpose((1,2,0)), 'RGB')
+        # img.show()
+        # raise RuntimeError('vg_hdf5.py line 100')
+
         im = im[:, :h, :w] # crop out
         im = im.transpose((1,2,0)) # c h w -> h w c
-        return im
+        return im  # bgr
 
     def __len__(self):
         return len(self.image_index)
@@ -106,6 +113,7 @@ class vg_hdf5(Dataset):
         """
         # get image
         img = Image.fromarray(self._im_getter(index)); width, height = img.size
+        # img.show()
 
         # get object bounding boxes, labels and relations
         obj_boxes = self.gt_boxes[index].copy()
@@ -255,6 +263,7 @@ def load_graphs(graphs_file, images_file, mode='train', num_im=-1, num_val_im=0,
     boxes = []
     gt_classes = []
     relationships = []
+    print(len(image_index))
     for i in range(len(image_index)):
         boxes_i = all_boxes[im_to_first_box[i]:im_to_last_box[i] + 1, :]
         gt_classes_i = all_labels[im_to_first_box[i]:im_to_last_box[i] + 1]
@@ -285,6 +294,5 @@ def load_graphs(graphs_file, images_file, mode='train', num_im=-1, num_val_im=0,
         boxes.append(boxes_i)
         gt_classes.append(gt_classes_i)
         relationships.append(rels)
-
     im_sizes = np.stack(im_sizes, 0)
     return split_mask, image_index_valid, im_sizes, boxes, gt_classes, relationships

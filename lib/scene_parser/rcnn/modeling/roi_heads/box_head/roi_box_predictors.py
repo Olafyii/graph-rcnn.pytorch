@@ -59,4 +59,11 @@ class FPNPredictor(nn.Module):
 
 def make_roi_box_predictor(cfg, in_channels):
     func = registry.ROI_BOX_PREDICTOR[cfg.MODEL.ROI_BOX_HEAD.PREDICTOR]
+    # print(func(cfg, in_channels))
+    # raise RuntimeError('roi_box_predictors.py line 63')
+    # FastRCNNPredictor(
+    # (avgpool): AdaptiveAvgPool2d(output_size=1)
+    # (cls_score): Linear(in_features=2048, out_features=151, bias=True)
+    # (bbox_pred): Linear(in_features=2048, out_features=604, bias=True)
+    # )
     return func(cfg, in_channels)

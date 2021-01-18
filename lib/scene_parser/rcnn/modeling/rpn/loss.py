@@ -117,6 +117,7 @@ class RPNLossComputation(object):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
+        # assert not torch.isnan(box_regression[sampled_pos_inds]).all(), 'nan!'+str(sampled_pos_inds)
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],
             regression_targets[sampled_pos_inds],

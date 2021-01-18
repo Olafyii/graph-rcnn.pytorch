@@ -63,6 +63,8 @@ class RetinaNetLossComputation(RPNLossComputation):
         regression_targets = torch.cat(regression_targets, dim=0)
         pos_inds = torch.nonzero(labels > 0).squeeze(1)
 
+        print('hello?hello?hello?hello?hello?hello?hello?hello?hello?hello?hello?hello?hello?hello?')
+        assert not torch.isnan(box_regression[pos_inds]).all()
         retinanet_regression_loss = smooth_l1_loss(
             box_regression[pos_inds],
             regression_targets[pos_inds],

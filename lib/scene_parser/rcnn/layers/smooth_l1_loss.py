@@ -8,6 +8,9 @@ def smooth_l1_loss(input, target, beta=1. / 9, size_average=True):
     very similar to the smooth_l1_loss from pytorch, but with
     the extra beta parameter
     """
+    # print('smooth_l1_loss:', input.max(), input.min())
+    # print(torch.isnan(input).all())
+    # assert not torch.isnan(input).all(), "NANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNANNAN"
     n = torch.abs(input - target)
     cond = n < beta
     loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)

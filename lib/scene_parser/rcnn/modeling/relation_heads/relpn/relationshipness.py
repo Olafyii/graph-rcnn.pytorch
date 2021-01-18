@@ -48,6 +48,7 @@ class Relationshipness(nn.Module):
             pos_scores = torch.mm(pos_subj, pos_obj.t()) # k x k
             scores = scores + pos_scores
         relness = torch.sigmoid(scores)      # k x k
+        # relness = scores
         return relness
 
 class Relationshipnessv2(nn.Module):
