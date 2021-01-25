@@ -21,6 +21,8 @@ from .msdn.msdn import build_msdn_model
 from .grcnn.grcnn import build_grcnn_model
 from .reldn.reldn import build_reldn_model
 
+from lib.utils.debug_tools import inspect
+
 class ROIRelationHead(torch.nn.Module):
     """
     Generic Relation Head class.
@@ -128,7 +130,15 @@ class ROIRelationHead(torch.nn.Module):
             losses (dict[Tensor]): During training, returns the losses for the
                 head. During testing, returns an empty dict.
         """
-
+        # inspect('features in relation_heads.py', features)  # type: <class 'list'>, len: 1  First element of features in relation_heads.py type: torch.Tensor, size: torch.Size([2, 1024, 48, 64])
+        # inspect('proposals in relation_heads.py', proposals)  # type: <class 'list'>, len: 2  First element of proposals in relation_heads.py type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+        # print('proposals', proposals)  # [BoxList(num_boxes=128, image_width=681, image_height=1024, mode=xyxy), BoxList(num_boxes=128, image_width=768, image_height=1024, mode=xyxy)]
+        # print('proposals[0].fields()', proposals[0].fields())  # ['objectness', 'labels', 'regression_targets', 'features', 'logits']
+        # inspect('targets in relation_heads.py', targets)  # type: <class 'list'>, len: 2  First element of targets in relation_heads.py type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+        # print('targets', targets)  # [BoxList(num_boxes=3, image_width=681, image_height=1024, mode=xyxy), BoxList(num_boxes=10, image_width=768, image_height=1024, mode=xyxy)]
+        # print('targets[0].fields()', targets[0].fields())  # ['labels', 'pred_labels', 'relation_labels']
+        # print('self.use_gt_boxes', self.use_gt_boxes)  # False
+        # print('self.cfg.MODEL.USE_RELPN', self.cfg.MODEL.USE_RELPN)  # True
         if self.training and self.use_gt_boxes:
             # augment proposals with ground-truth boxes
             targets_cp = [target.copy_with_fields(target.fields()) for target in targets]
@@ -149,6 +159,12 @@ class ROIRelationHead(torch.nn.Module):
             # positive / negative ratio
             if self.cfg.MODEL.USE_RELPN:
                 proposal_pairs, loss_relpn = self.relpn(proposals, targets)
+                # inspect('proposals', proposals, color=32)  # type: <class 'list'>, len: 2  First element of proposals type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+                # inspect('targets', targets, color=32)  # type: <class 'list'>, len: 2  First element of proposals type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+                # inspect('proposal_pairs', proposal_pairs, color=32)  # type: <class 'list'>, len: 2  First element of proposal_pairs type: <class 'lib.scene_parser.rcnn.structures.bounding_box_pair.BoxPairList'>
+                # print('proposals[0].fields()', proposals[0].fields())  # ['objectness', 'labels', 'regression_targets', 'features', 'logits']
+                # print('targets[0].fields()', targets[0].fields())  # ['labels', 'pred_labels', 'relation_labels']
+                # print('proposal_pairs[0].fields()', proposal_pairs[0].fields())  # ['idx_pairs', 'labels']
             else:
                 proposal_pairs = self.loss_evaluator.subsample(proposals, targets)
         else:
@@ -173,7 +189,7 @@ class ROIRelationHead(torch.nn.Module):
             # extract features that will be fed to the final classifier. The
             # feature_extractor generally corresponds to the pooler + heads
 
-            x, obj_class_logits, pred_class_logits, obj_class_labels, rel_inds = \
+            x, obj_class_logits, pred_class_logits, obj_class_labels, rel_inds, attr_distributions = \
                 self.rel_predictor(features, proposals, proposal_pairs)
 
             if self.use_bias:
@@ -213,6 +229,8 @@ class ROIRelationHead(torch.nn.Module):
         else:
             raise RuntimeError('obj_class_logits is None!')
 
+        loss_obj_attr_classifier = self.loss_evaluator.obj_attr_loss(proposals, attr_distributions)
+
         if self.cfg.MODEL.USE_RELPN:
             idx = obj_class_labels[rel_inds[:, 0]] * 151 + obj_class_labels[rel_inds[:, 1]]
             freq_prior = self.freq_dist.view(-1, 51)[idx].cuda()
@@ -222,7 +240,8 @@ class ROIRelationHead(torch.nn.Module):
                 proposal_pairs,
                 dict(loss_obj_classifier=loss_obj_classifier,
                      loss_relpn = loss_relpn,
-                     loss_pred_classifier=loss_pred_classifier),
+                     loss_pred_classifier=loss_pred_classifier, 
+                     loss_obj_attr_classifier = loss_obj_attr_classifier),
             )
         else:
             loss_pred_classifier = self.loss_evaluator([pred_class_logits])
@@ -230,7 +249,8 @@ class ROIRelationHead(torch.nn.Module):
                 x,
                 proposal_pairs,
                 dict(loss_obj_classifier=loss_obj_classifier,
-                     loss_pred_classifier=loss_pred_classifier),
+                     loss_pred_classifier=loss_pred_classifier, 
+                     loss_obj_attr_classifier = loss_obj_attr_classifier),
             )
 
 def build_roi_relation_head(cfg, in_channels):

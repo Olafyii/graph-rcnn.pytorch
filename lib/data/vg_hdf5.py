@@ -12,6 +12,8 @@ from torch.utils.data import Dataset
 from lib.scene_parser.rcnn.structures.bounding_box import BoxList
 from lib.utils.box import bbox_overlaps
 
+from lib.utils.debug_tools import inspect
+
 class vg_hdf5(Dataset):
     def __init__(self, cfg, split="train", transforms=None, num_im=-1, num_val_im=5000,
             filter_duplicate_rels=True, filter_non_overlap=True, filter_empty_rels=True):
@@ -26,13 +28,15 @@ class vg_hdf5(Dataset):
         self.filter_non_overlap = filter_non_overlap
         self.filter_duplicate_rels = filter_duplicate_rels and self.split == 'train'
 
-        self.roidb_file = os.path.join(self.data_dir, "VG-SGG.h5")
+        # self.roidb_file = os.path.join(self.data_dir, "VG-SGG.h5")
+        self.roidb_file = os.path.join(self.data_dir, "GQA-SGG.h5")
         self.image_file = os.path.join(self.data_dir, "imdb_1024.h5")
         # read in dataset from a h5 file and a dict (json) file
         assert os.path.exists(self.data_dir), \
             "cannot find folder {}, please download the visual genome data into this folder".format(self.data_dir)
         self.im_h5 = h5py.File(self.image_file, 'r')
-        self.info = json.load(open(os.path.join(self.data_dir, "VG-SGG-dicts.json"), 'r'))
+        # self.info = json.load(open(os.path.join(self.data_dir, "VG-SGG-dicts.json"), 'r'))
+        self.info = json.load(open(os.path.join(self.data_dir, "GQA-SGG-dicts.json"), 'r'))
         self.im_refs = self.im_h5['images'] # image data reference
         im_scale = self.im_refs.shape[2]
 
@@ -49,7 +53,7 @@ class vg_hdf5(Dataset):
                                   self.predicate_to_ind[k])
         # cfg.ind_to_predicate = self.ind_to_predicates
 
-        self.split_mask, self.image_index, self.im_sizes, self.gt_boxes, self.gt_classes, self.relationships = load_graphs(
+        self.split_mask, self.image_index, self.im_sizes, self.gt_boxes, self.gt_classes, self.relationships, self.gt_attrs = load_graphs(
             self.roidb_file, self.image_file,
             self.split, num_im, num_val_im=num_val_im,
             filter_empty_rels=filter_empty_rels,
@@ -118,6 +122,7 @@ class vg_hdf5(Dataset):
         # get object bounding boxes, labels and relations
         obj_boxes = self.gt_boxes[index].copy()
         obj_labels = self.gt_classes[index].copy()
+        obj_attrs = self.gt_attrs[index].copy()
         obj_relation_triplets = self.relationships[index].copy()
 
         if self.filter_duplicate_rels:
@@ -141,8 +146,9 @@ class vg_hdf5(Dataset):
         target_raw = BoxList(obj_boxes, (width, height), mode="xyxy")
         img, target = self.transforms(img, target_raw)
         target.add_field("labels", torch.from_numpy(obj_labels))
-        target.add_field("pred_labels", torch.from_numpy(obj_relations))
+        target.add_field("pred_labels", torch.from_numpy(obj_relations))  # predicate labels
         target.add_field("relation_labels", torch.from_numpy(obj_relation_triplets))
+        target.add_field("attrs", torch.from_numpy(obj_attrs))  # (#, 77)
         target = target.clip_to_image(remove_empty=False)
 
         return img, target, index
@@ -154,6 +160,7 @@ class vg_hdf5(Dataset):
         obj_boxes = self.gt_boxes[index].copy()
         obj_labels = self.gt_classes[index].copy()
         obj_relation_triplets = self.relationships[index].copy()
+        obj_attrs = self.gt_attrs[index].copy()
 
         if self.filter_duplicate_rels:
             # Filter out dupes!
@@ -178,6 +185,7 @@ class vg_hdf5(Dataset):
         target.add_field("pred_labels", torch.from_numpy(obj_relations))
         target.add_field("relation_labels", torch.from_numpy(obj_relation_triplets))
         target.add_field("difficult", torch.from_numpy(obj_labels).clone().fill_(0))
+        target.add_field("attrs", torch.from_numpy(obj_attrs))  # (#, 77)
         return target
 
     def get_img_info(self, img_id):
@@ -235,6 +243,7 @@ def load_graphs(graphs_file, images_file, mode='train', num_im=-1, num_val_im=0,
 
     # Get box information
     all_labels = roi_h5['labels'][:, 0]
+    all_attrs = roi_h5['attributes'][:]
     all_boxes = roi_h5['boxes_{}'.format(1024)][:]  # will index later
     assert np.all(all_boxes[:, :2] >= 0)  # sanity check
     assert np.all(all_boxes[:, 2:] > 0)  # no empty box
@@ -262,11 +271,13 @@ def load_graphs(graphs_file, images_file, mode='train', num_im=-1, num_val_im=0,
     image_index_valid = []
     boxes = []
     gt_classes = []
+    gt_attrs = []
     relationships = []
     print(len(image_index))
     for i in range(len(image_index)):
         boxes_i = all_boxes[im_to_first_box[i]:im_to_last_box[i] + 1, :]
         gt_classes_i = all_labels[im_to_first_box[i]:im_to_last_box[i] + 1]
+        gt_attrs_i = all_attrs[im_to_first_box[i]:im_to_last_box[i] + 1, :]
 
         if im_to_first_rel[i] >= 0:
             predicates = _relation_predicates[im_to_first_rel[i]:im_to_last_rel[i] + 1]
@@ -293,6 +304,12 @@ def load_graphs(graphs_file, images_file, mode='train', num_im=-1, num_val_im=0,
         im_sizes.append(np.array([im_widths[i], im_heights[i]]))
         boxes.append(boxes_i)
         gt_classes.append(gt_classes_i)
+        gt_attrs.append(gt_attrs_i)
         relationships.append(rels)
     im_sizes = np.stack(im_sizes, 0)
-    return split_mask, image_index_valid, im_sizes, boxes, gt_classes, relationships
+
+    # inspect('image_index_valid', image_index_valid)  # type: <class 'list'>, len: 56209  First element of image_index_valid type: <class 'numpy.int64'>, value: 6554
+    # inspect('gt_classes', gt_classes)  # type: <class 'list'>, len: 56209  First element of gt_classes type: np.ndarray, shape: (43,)
+    # inspect('relationships', relationships)  # type: <class 'list'>, len: 56209  First element of relationships type: np.ndarray, shape: (28, 3)
+    # raise RuntimeError('vg_hdf5.py line 298')
+    return split_mask, image_index_valid, im_sizes, boxes, gt_classes, relationships, gt_attrs

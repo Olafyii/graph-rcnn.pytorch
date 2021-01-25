@@ -12,6 +12,8 @@ from ..roi_relation_box_predictors import make_roi_relation_box_predictor
 from ..roi_relation_predictors import make_roi_relation_predictor
 from .agcn.agcn import _GraphConvolutionLayer_Collect, _GraphConvolutionLayer_Update
 
+from lib.utils.debug_tools import inspect
+
 class GRCNN(nn.Module):
 	# def __init__(self, fea_size, dropout=False, gate_width=1, use_kernel_function=False):
     def __init__(self, cfg, in_channels):
@@ -102,7 +104,7 @@ class GRCNN(nn.Module):
             pred_feats.append(self.gcn_update_feat(pred_feats[t], source2rel_all, 1))
 
 
-        obj_class_logits = self.obj_predictor(obj_feats[-1].unsqueeze(2).unsqueeze(3))
+        obj_class_logits, attr_distributions = self.obj_predictor(obj_feats[-1].unsqueeze(2).unsqueeze(3))
         pred_class_logits = self.pred_predictor(pred_feats[-1].unsqueeze(2).unsqueeze(3))
 
         '''score level agcn'''
@@ -135,7 +137,12 @@ class GRCNN(nn.Module):
         else:
             obj_class_labels = obj_class_logits[:, 1:].max(1)[1] + 1
 
-        return (x_pred), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds
+        
+        # inspect('obj_class_logits', obj_class_logits)
+        # print('obj_class_logits.min(), obj_class_logits.max()', obj_class_logits.min(), obj_class_logits.max())
+        # inspect('attr_distributions', attr_distributions)
+        # raise RuntimeError('grcnn.py line 141')
+        return (x_pred), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds, attr_distributions
 
 def build_grcnn_model(cfg, in_channels):
     return GRCNN(cfg, in_channels)

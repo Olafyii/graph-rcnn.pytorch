@@ -19,9 +19,11 @@ MODEL:
   ROI_HEADS:
     BATCH_SIZE_PER_IMAGE: 128
     DETECTIONS_PER_IMG: 50
+    GROUP_ATTR_RETURN: "C:\\E\\data\\VisualGenome\\scene-graph-TF-release\\data_tools\\group_attr_return.dill"
   ROI_BOX_HEAD:
     NUM_CLASSES: 151
     FREEZE_PARAMETER: False
+    PREDICTOR: "NSMPredictor"
   ROI_RELATION_HEAD:
     FILTER_NON_OVERLAP: False
     BATCH_SIZE_PER_IMAGE: 256

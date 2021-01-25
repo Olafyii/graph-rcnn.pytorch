@@ -17,6 +17,8 @@ from .rcnn.modeling.relation_heads.relation_heads import build_roi_relation_head
 
 SCENE_PAESER_DICT = ["sg_baseline", "sg_imp", "sg_msdn", "sg_grcnn", "sg_reldn"]
 
+from lib.utils.debug_tools import inspect
+
 class SceneParser(GeneralizedRCNN):
     "Scene Parser"
     def __init__(self, cfg):
@@ -128,14 +130,87 @@ class SceneParser(GeneralizedRCNN):
 
         scene_parser_losses = {}
         # print('self.roi_heads', self.roi_heads)
+        """
+        self.roi_heads CombinedROIHeads(
+        (box): ROIBoxHead(
+            (avgpool): AdaptiveAvgPool2d(output_size=1)
+            (feature_extractor): ResNet50Conv5ROIFeatureExtractor(
+            (pooler): Pooler(
+                (poolers): ModuleList(
+                (0): ROIAlign(output_size=(14, 14), spatial_scale=0.0625, sampling_ratio=0)
+                )
+            )
+            (head): ResNetHead(
+                (layer4): Sequential(
+                (0): BottleneckWithFixedBatchNorm(
+                    (downsample): Sequential(
+                    (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (1): FrozenBatchNorm2d()
+                    )
+                    (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                )
+                (1): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                )
+                (2): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                )
+                )
+            )
+            )
+            (predictor): FastRCNNPredictor(
+            (avgpool): AdaptiveAvgPool2d(output_size=1)
+            (cls_score): Linear(in_features=2048, out_features=151, bias=True)
+            (bbox_pred): Linear(in_features=2048, out_features=604, bias=True)
+            )
+            (post_processor): PostProcessor()
+        )
+        )
+        """
         # raise RuntimeError("STOP!!s")
         if self.roi_heads:
-            x, detections, roi_heads_loss = self.roi_heads(features, proposals, targets)
+            # inspect('features in parser.py', features)  # type: <class 'list'>, len: 1  First element of features in parser.py type: torch.Tensor, size: torch.Size([2, 1024, 64, 44])
+            # inspect('proposals in parser.py', proposals)  # type: <class 'list'>, len: 2  First element of proposals in parser.py type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+            # # fields of First element of proposals in parser.py: ['objectness']
+            # inspect('targets in parser.py', targets)  # type: <class 'list'>, len: 2  First element of targets in parser.py type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+            # # fields of First element of targets in parser.py: ['labels', 'pred_labels', 'relation_labels', 'attrs']
+            # print(targets[0].get_field('attrs'))
+            # raise RuntimeError('parser.py line 193')
+
+            x, detections, roi_heads_loss = self.roi_heads(features, proposals, targets)  # filters the proposals, keeps 128 (ROI_HEADS.BATCH_SIZE_PER_IMAGE) proposals
+
+            # inspect('x in parser.py', x)  # type: torch.Tensor, size: torch.Size([256, 2048, 7, 7])
+            # inspect('detections in parser.py', detections)  # type: <class 'list'>, len: 2  First element of detections in parser.py type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+            # # fields of First element of detections in parser.py: ['objectness', 'labels', 'regression_targets', 'features', 'logits']
+            
             result = detections
+
+            # inspect('roi_heads_loss', roi_heads_loss)  # type: dict, keys: dict_keys(['loss_classifier', 'loss_box_reg', 'loss_attr_classifier'])
+
             scene_parser_losses.update(roi_heads_loss)
+
+            # inspect('scene_parser_losses', scene_parser_losses)  # type: dict, keys: dict_keys(['loss_classifier', 'loss_box_reg', 'loss_attr_classifier'])
 
             if self.rel_heads:
                 relation_features = features
+                # print('type(features), len(features), features[0].size()', type(features), len(features), features[0].size())
+                # print('type(x), len(x), x.size()', type(x), len(x), x.size())
+                # raise RuntimeError('parser.py line 142')
                 # optimization: during training, if we share the feature extractor between
                 # the box and the relation heads, then we can reuse the features already computed
                 if (
@@ -147,9 +222,22 @@ class SceneParser(GeneralizedRCNN):
                 # this makes the API consistent during training and testing
                 x_pairs, detection_pairs, rel_heads_loss = self.rel_heads(relation_features, detections, targets)
                 scene_parser_losses.update(rel_heads_loss)
+                # inspect('relation_features', relation_features)  # type: <class 'list'>, len: 1  First element of relation_features type: torch.Tensor, size: torch.Size([2, 1024, 48, 64])
+                # inspect('detections', detections)  # type: <class 'list'>, len: 2  First element of detections type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+                # # fields of First element of detections: ['objectness', 'labels', 'regression_targets', 'features', 'logits']
+                # inspect('targets', targets)  # type: <class 'list'>, len: 2  First element of targets type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+                # # fields of First element of targets: ['labels', 'pred_labels', 'relation_labels']
+                # inspect('x_pairs', x_pairs)  # type: torch.Tensor, size: torch.Size([512, 1024])
+                # inspect('detection_pairs', detection_pairs)  # type: <class 'list'>, len: 2  First element of detection_pairs type: <class 'lib.scene_parser.rcnn.structures.bounding_box_pair.BoxPairList'>
+                # # fields of First element of detection_pairs: ['idx_pairs', 'labels']
+                # inspect('rel_heads_loss', rel_heads_loss)  # type: dict, keys: dict_keys(['loss_obj_classifier', 'loss_relpn', 'loss_pred_classifier', 'loss_obj_attr_classifier'])
 
                 x = (x, x_pairs)
                 result = (detections, detection_pairs)
+                # inspect('result', result)  # type: <class 'tuple'>, len: 2
+                # First element of result type: <class 'list'>, len: 2
+                # First element of First element of result type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+                # fields of First element of First element of result: ['objectness', 'labels', 'regression_targets', 'attrs', 'features', 'logits', 'attr_logits']
         else:
             # RPN-only models don't have roi_heads
             x = features
@@ -160,6 +248,7 @@ class SceneParser(GeneralizedRCNN):
             losses = {}
             losses.update(scene_parser_losses)
             losses.update(proposal_losses)
+            # inspect('losses', losses)  # type: dict, keys: dict_keys(['loss_classifier', 'loss_box_reg', 'loss_attr_classifier', 'loss_obj_classifier', 'loss_relpn', 'loss_pred_classifier', 'loss_obj_attr_classifier', 'loss_objectness', 'loss_rpn_box_reg'])
             return losses
 
         # NOTE: if object scores are updated in rel_heads, we need to ensure detections are updated accordingly

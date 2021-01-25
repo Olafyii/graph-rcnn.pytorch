@@ -24,6 +24,9 @@ def compute_colors_for_labels(labels, palette = torch.tensor([2 ** 25 - 1, 2 ** 
     """
     Simple function that adds fixed colors depending on the class
     """
+    # print('palette', palette)
+    # print('labels[:, None]', labels[:, None])
+    # raise RuntimeError('visualize.py line 29')
     colors = labels[:, None] * palette
     colors = (colors % 255).numpy().astype("uint8")
     return colors

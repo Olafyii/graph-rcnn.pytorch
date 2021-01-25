@@ -13,6 +13,7 @@ from lib.scene_parser.rcnn.modeling.balanced_positive_negative_pair_sampler impo
 )
 from lib.scene_parser.rcnn.modeling.utils import cat
 
+from lib.utils.debug_tools import inspect
 
 class FastRCNNLossComputation(object):
     """
@@ -215,6 +216,7 @@ class FastRCNNLossComputation(object):
             proposals (list[BoxList])
             targets (list[BoxList])
         """
+        print("\033[1;32;40m%s\033[0m"%'hello from loss_evaluator.subsample')
         if targets is not None:
             proposal_pairs = self._randomsample_train(proposals, targets)
         else:
@@ -286,6 +288,27 @@ class FastRCNNLossComputation(object):
 
         return classification_loss
 
+    def obj_attr_loss(self, proposals, attr_distributions):
+        # inspect('proposals[0]', proposals[0])  # type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+        # fields of proposals[0]: ['objectness', 'labels', 'regression_targets', 'attrs', 'features', 'logits']
+        # inspect('attr_distributions', attr_distributions)  # attr_distributions type: <class 'list'>, len: 77
+        # First element of attr_distributions type: torch.Tensor, size: torch.Size([256, 7])
+        # print(proposals[0].get_field('attrs').size(), proposals[0].get_field('attrs').max())  # torch.Size([128, 77]) tensor(8, device='cuda:0')
+
+        device = attr_distributions[0].device
+        attr_gt = cat([proposal.get_field('attrs') for proposal in proposals], dim=0)
+
+        attr_loss = 0
+        for i, dist in enumerate(attr_distributions):
+            attr_loss += F.cross_entropy(attr_distributions[i], attr_gt[:, i]+1)
+
+        # inspect('proposals', proposals)  # type: <class 'list'>, len: 2
+        # First element of proposals type: <class 'lib.scene_parser.rcnn.structures.bounding_box.BoxList'>
+        # fields of First element of proposals: ['objectness', 'labels', 'regression_targets', 'attrs', 'features', 'logits']
+
+        return attr_loss
+        
+        # raise RuntimeError('relation_headas/loss.py line 294')
 
 def make_roi_relation_loss_evaluator(cfg):
     matcher = PairMatcher(

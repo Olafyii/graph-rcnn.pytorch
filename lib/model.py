@@ -17,6 +17,9 @@ from .utils.box import bbox_overlaps
 
 from .scene_parser.rcnn.structures.image_list import to_image_list
 
+import dill
+from .utils.debug_tools import inspect
+
 class SceneGraphGeneration:
     """
     Scene graph generation
@@ -53,6 +56,476 @@ class SceneGraphGeneration:
 
         # build scene graph generation model
         self.scene_parser = build_scene_parser(cfg); self.scene_parser.to(self.device)
+        # print('self.scene_parser', self.scene_parser)
+        """
+        self.scene_parser SceneParser(
+        (backbone): Sequential(
+            (body): ResNet(
+            (stem): StemWithFixedBatchNorm(
+                (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+                (bn1): FrozenBatchNorm2d()
+            )
+            (layer1): Sequential(
+                (0): BottleneckWithFixedBatchNorm(
+                (downsample): Sequential(
+                    (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (1): FrozenBatchNorm2d()
+                )
+                (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (1): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (2): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+            )
+            (layer2): Sequential(
+                (0): BottleneckWithFixedBatchNorm(
+                (downsample): Sequential(
+                    (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (1): FrozenBatchNorm2d()
+                )
+                (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (1): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (2): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (3): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+            )
+            (layer3): Sequential(
+                (0): BottleneckWithFixedBatchNorm(
+                (downsample): Sequential(
+                    (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (1): FrozenBatchNorm2d()
+                )
+                (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (1): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (2): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (3): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (4): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (5): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (6): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (7): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (8): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (9): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (10): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (11): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (12): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (13): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (14): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (15): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (16): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (17): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (18): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (19): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (20): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (21): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+                (22): BottleneckWithFixedBatchNorm(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): FrozenBatchNorm2d()
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): FrozenBatchNorm2d()
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): FrozenBatchNorm2d()
+                )
+            )
+            )
+        )
+        (rpn): RPNModule(
+            (anchor_generator): AnchorGenerator(
+            (cell_anchors): BufferList()
+            )
+            (head): RPNHead(
+            (conv): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (cls_logits): Conv2d(1024, 15, kernel_size=(1, 1), stride=(1, 1))
+            (bbox_pred): Conv2d(1024, 60, kernel_size=(1, 1), stride=(1, 1))
+            )
+            (box_selector_train): RPNPostProcessor()
+            (box_selector_test): RPNPostProcessor()
+        )
+        (roi_heads): CombinedROIHeads(
+            (box): ROIBoxHead(
+            (avgpool): AdaptiveAvgPool2d(output_size=1)
+            (feature_extractor): ResNet50Conv5ROIFeatureExtractor(
+                (pooler): Pooler(
+                (poolers): ModuleList(
+                    (0): ROIAlign(output_size=(14, 14), spatial_scale=0.0625, sampling_ratio=0)
+                )
+                )
+                (head): ResNetHead(
+                (layer4): Sequential(
+                    (0): BottleneckWithFixedBatchNorm(
+                    (downsample): Sequential(
+                        (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                        (1): FrozenBatchNorm2d()
+                    )
+                    (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                    (1): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                    (2): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                )
+                )
+            )
+            (predictor): FastRCNNPredictor(
+                (avgpool): AdaptiveAvgPool2d(output_size=1)
+                (cls_score): Linear(in_features=2048, out_features=151, bias=True)
+                (bbox_pred): Linear(in_features=2048, out_features=604, bias=True)
+            )
+            (post_processor): PostProcessor()
+            )
+        )
+        (rel_heads): ROIRelationHead(
+            (rel_predictor): GRCNN(
+            (avgpool): AdaptiveAvgPool2d(output_size=1)
+            (pred_feature_extractor): ResNet50Conv5ROIFeatureExtractor(
+                (pooler): Pooler(
+                (poolers): ModuleList(
+                    (0): ROIAlign(output_size=(14, 14), spatial_scale=0.0625, sampling_ratio=0)
+                )
+                )
+                (head): ResNetHead(
+                (layer4): Sequential(
+                    (0): BottleneckWithFixedBatchNorm(
+                    (downsample): Sequential(
+                        (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                        (1): FrozenBatchNorm2d()
+                    )
+                    (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                    (1): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                    (2): BottleneckWithFixedBatchNorm(
+                    (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn1): FrozenBatchNorm2d()
+                    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                    (bn2): FrozenBatchNorm2d()
+                    (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                    (bn3): FrozenBatchNorm2d()
+                    )
+                )
+                )
+            )
+            (obj_embedding): Sequential(
+                (0): Linear(in_features=2048, out_features=1024, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=1024, out_features=1024, bias=True)
+            )
+            (rel_embedding): Sequential(
+                (0): Linear(in_features=2048, out_features=1024, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=1024, out_features=1024, bias=True)
+            )
+            (gcn_collect_feat): _GraphConvolutionLayer_Collect(
+                (collect_units): ModuleList(
+                (0): _Collection_Unit(
+                    (fc): Linear(in_features=1024, out_features=1024, bias=True)
+                )
+                (1): _Collection_Unit(
+                    (fc): Linear(in_features=1024, out_features=1024, bias=True)
+                )
+                (2): _Collection_Unit(
+                    (fc): Linear(in_features=1024, out_features=1024, bias=True)
+                )
+                (3): _Collection_Unit(
+                    (fc): Linear(in_features=1024, out_features=1024, bias=True)
+                )
+                (4): _Collection_Unit(
+                    (fc): Linear(in_features=1024, out_features=1024, bias=True)
+                )
+                )
+            )
+            (gcn_update_feat): _GraphConvolutionLayer_Update(
+                (update_units): ModuleList(
+                (0): _Update_Unit()
+                (1): _Update_Unit()
+                )
+            )
+            (gcn_collect_score): _GraphConvolutionLayer_Collect(
+                (collect_units): ModuleList(
+                (0): _Collection_Unit(
+                    (fc): Linear(in_features=51, out_features=151, bias=True)
+                )
+                (1): _Collection_Unit(
+                    (fc): Linear(in_features=51, out_features=151, bias=True)
+                )
+                (2): _Collection_Unit(
+                    (fc): Linear(in_features=151, out_features=51, bias=True)
+                )
+                (3): _Collection_Unit(
+                    (fc): Linear(in_features=151, out_features=51, bias=True)
+                )
+                (4): _Collection_Unit(
+                    (fc): Linear(in_features=151, out_features=151, bias=True)
+                )
+                )
+            )
+            (gcn_update_score): _GraphConvolutionLayer_Update(
+                (update_units): ModuleList(
+                (0): _Update_Unit()
+                (1): _Update_Unit()
+                )
+            )
+            (obj_predictor): FastRCNNPredictor(
+                (avgpool): AdaptiveAvgPool2d(output_size=1)
+                (cls_score): Linear(in_features=1024, out_features=151, bias=True)
+            )
+            (pred_predictor): FastRCNNPredictor(
+                (avgpool): AdaptiveAvgPool2d(output_size=1)
+                (cls_score): Linear(in_features=1024, out_features=51, bias=True)
+            )
+            )
+            (post_processor): PostProcessor()
+            (relpn): RelPN(
+            (relationshipness): Relationshipness(
+                (subj_proj): Sequential(
+                (0): Linear(in_features=151, out_features=64, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=64, out_features=64, bias=True)
+                )
+                (obj_prof): Sequential(
+                (0): Linear(in_features=151, out_features=64, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=64, out_features=64, bias=True)
+                )
+                (sub_pos_encoder): Sequential(
+                (0): Linear(in_features=6, out_features=64, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=64, out_features=64, bias=True)
+                )
+                (obj_pos_encoder): Sequential(
+                (0): Linear(in_features=6, out_features=64, bias=True)
+                (1): ReLU(inplace=True)
+                (2): Linear(in_features=64, out_features=64, bias=True)
+                )
+            )
+            )
+        )
+        )
+        """
         self.sp_optimizer, self.sp_scheduler, self.sp_checkpointer, self.extra_checkpoint_data = \
             build_scene_parser_optimizer(cfg, self.scene_parser, local_rank=local_rank, distributed=distributed)
 
@@ -277,6 +750,18 @@ class SceneGraphGeneration:
                 if timer:
                     timer.tic()
                 output = self.scene_parser(imgs)
+                # f = open('C:\\Users\\80409\\Desktop\\temp\\ot.dill', 'wb')
+                # dill.dump([output, targets], f)
+                # f.close()
+                # print(output)
+                # print(targets)
+                # raise RuntimeError('stop!')
+                # print('output', output[0][0].fields(), output)
+                # print('output scores', output[0][0].get_field('scores'))
+                # print('output labels', output[0][0].get_field('labels'))
+                # print('target labels', targets[0].get_field('labels'))
+                # print('targets', targets[0].fields())
+                # raise RuntimeError('model.py line 282')
                 if self.cfg.MODEL.RELATION_ON:
                     output, output_pred = output
                     output_pred = [o.to(cpu_device) for o in output_pred]
@@ -287,8 +772,15 @@ class SceneGraphGeneration:
                     torch.cuda.synchronize()
                     timer.toc()
                 output = [o.to(cpu_device) for o in output]
+                # print('output', output)
+                # print('output labels', output[0].get_field('labels'))
                 if visualize:
                     self.visualize_detection(self.data_loader_test.dataset, image_ids, imgs, output)
+                    # print('targets', targets)
+                    # print('output', output)
+                    # targets[0].add_field('scores', torch.ones((len(targets[0]))))
+                    # targets = [t.to(cpu_device) for t in targets]
+                    # self.visualize_detection(self.data_loader_test.dataset, image_ids, imgs, targets)
             results_dict.update(
                 {img_id: result for img_id, result in zip(image_ids, output)}
             )
